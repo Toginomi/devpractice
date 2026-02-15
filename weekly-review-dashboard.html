@@ -1,0 +1,900 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BASB Weekly Review Dashboard</title>
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+
+    :root {
+        --parchment: #f8f2e5;
+        --deep-teal: #1b3c46;
+        --bright-cyan: #46e1bd;
+        --pale-gray: #e6e6e6;
+        --white: #ffffff;
+        --sidebar-width: 260px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+        font-family: 'Poppins', sans-serif;
+        background-color: var(--parchment);
+        color: var(--deep-teal);
+        margin: 0;
+        height: 100vh;
+        display: flex;
+        overflow: hidden;
+    }
+
+    aside {
+        width: var(--sidebar-width);
+        background-color: var(--deep-teal);
+        color: var(--white);
+        display: flex;
+        flex-direction: column;
+        padding: 30px 20px;
+        box-shadow: 4px 0 15px rgba(0,0,0,0.1);
+        z-index: 10;
+        flex-shrink: 0;
+    }
+
+    .brand {
+        font-weight: 700;
+        font-size: 1.4rem;
+        letter-spacing: 2px;
+        margin-bottom: 40px;
+        color: var(--bright-cyan);
+        text-align: center;
+        text-transform: uppercase;
+    }
+
+    .nav-menu {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        flex-grow: 1;
+        overflow-y: auto;
+    }
+
+    .nav-item {
+        padding: 12px 15px;
+        border-radius: 8px;
+        cursor: pointer;
+        margin-bottom: 8px;
+        transition: all 0.2s ease;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-weight: 500;
+        opacity: 0.8;
+        font-size: 0.95rem;
+    }
+
+    .nav-item:hover {
+        background-color: rgba(255,255,255,0.1);
+        opacity: 1;
+    }
+
+    .nav-item.active {
+        background-color: var(--white);
+        color: var(--deep-teal);
+        opacity: 1;
+        font-weight: 600;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+
+    .completion-badge {
+        font-size: 0.75rem;
+        background: rgba(0,0,0,0.2);
+        padding: 2px 8px;
+        border-radius: 10px;
+        min-width: 30px;
+        text-align: center;
+    }
+    
+    .nav-item.active .completion-badge {
+        background: var(--pale-gray);
+        color: var(--deep-teal);
+    }
+    
+    .timer-widget {
+        background: rgba(0, 0, 0, 0.2);
+        padding: 15px;
+        border-radius: 12px;
+        margin-top: 20px;
+        text-align: center;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .timer-label {
+        font-size: 0.75rem;
+        opacity: 0.7;
+        margin-bottom: 5px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+    
+    .timer-display {
+        font-size: 2rem;
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+        color: var(--bright-cyan);
+        margin: 0 0 10px 0;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        line-height: 1;
+    }
+    
+    .timer-controls {
+        display: flex;
+        gap: 8px;
+        justify-content: center;
+    }
+    
+    .timer-controls button {
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: white;
+        padding: 6px 12px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-family: inherit;
+        font-size: 0.85rem;
+        transition: all 0.2s;
+    }
+    
+    .timer-controls button:hover {
+        background: rgba(255, 255, 255, 0.2);
+    }
+    
+    #timer-btn {
+        background: var(--bright-cyan);
+        color: var(--deep-teal);
+        font-weight: 600;
+        border: none;
+        flex-grow: 1;
+    }
+    
+    #timer-btn:hover {
+        background: #3ad1af;
+    }
+    
+    #timer-btn.active {
+        background: #ff6b6b;
+        color: white;
+    }
+    
+    .timer-reset {
+        font-size: 1rem;
+        padding: 0 10px !important;
+        display: flex;
+        align-items: center;
+    }
+
+    /* CELEBRATION MODAL */
+    .celebration-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(27, 60, 70, 0.95);
+        display: none;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+        animation: fadeIn 0.3s ease;
+    }
+
+    .celebration-overlay.active {
+        display: flex;
+    }
+
+    .celebration-content {
+        background: var(--white);
+        padding: 50px 60px;
+        border-radius: 20px;
+        text-align: center;
+        max-width: 500px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        animation: bounceIn 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    }
+
+    .celebration-content h2 {
+        color: var(--deep-teal);
+        font-size: 2.5rem;
+        margin: 0 0 20px 0;
+        border: none;
+        padding: 0;
+    }
+
+    .celebration-content p {
+        font-size: 1.1rem;
+        color: #55757f;
+        line-height: 1.6;
+        margin-bottom: 30px;
+    }
+
+    .celebration-emoji {
+        font-size: 4rem;
+        margin-bottom: 20px;
+        animation: rotate 0.8s ease-in-out;
+        display: block;
+    }
+
+    .celebration-button {
+        background: var(--deep-teal);
+        color: white;
+        border: none;
+        padding: 15px 40px;
+        border-radius: 8px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        cursor: pointer;
+        font-family: inherit;
+        transition: all 0.3s;
+    }
+
+    .celebration-button:hover {
+        background: #2d5a68;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(27, 60, 70, 0.3);
+    }
+
+    .celebration-content a:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    /* CONFETTI */
+    .confetti {
+        position: fixed;
+        width: 10px;
+        height: 10px;
+        background: var(--bright-cyan);
+        position: absolute;
+        animation: confetti-fall 3s linear forwards;
+        z-index: 999;
+    }
+
+    .confetti:nth-child(2n) { background: #ffd700; }
+    .confetti:nth-child(3n) { background: #ff6b6b; }
+    .confetti:nth-child(4n) { background: #4ecdc4; }
+    .confetti:nth-child(5n) { background: #95e1d3; }
+
+    @keyframes confetti-fall {
+        to {
+            transform: translateY(100vh) rotate(360deg);
+            opacity: 0;
+        }
+    }
+
+    @keyframes bounceIn {
+        0% {
+            transform: scale(0.3);
+            opacity: 0;
+        }
+        50% {
+            transform: scale(1.05);
+        }
+        70% {
+            transform: scale(0.9);
+        }
+        100% {
+            transform: scale(1);
+            opacity: 1;
+        }
+    }
+
+    @keyframes rotate {
+        0%, 100% { transform: rotate(0deg); }
+        25% { transform: rotate(-10deg); }
+        75% { transform: rotate(10deg); }
+    }
+
+    main {
+        flex-grow: 1;
+        padding: 40px;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        background-color: var(--parchment);
+    }
+
+    header {
+        margin-bottom: 30px;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        flex-wrap: wrap;
+        gap: 20px;
+    }
+
+    h1 {
+        margin: 0;
+        font-size: 2rem;
+        color: var(--deep-teal);
+    }
+
+    .subtitle {
+        opacity: 0.7;
+        margin-top: 5px;
+        font-size: 1rem;
+    }
+
+    .progress-overview {
+        background: var(--white);
+        padding: 12px 20px;
+        border-radius: 12px;
+        box-shadow: 0 4px 10px rgba(27, 60, 70, 0.05);
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+
+    .progress-bar-container {
+        width: 150px;
+        height: 8px;
+        background: var(--pale-gray);
+        border-radius: 4px;
+        overflow: hidden;
+    }
+
+    .main-progress-bar {
+        height: 100%;
+        background: var(--bright-cyan);
+        width: 0%;
+        transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .dashboard-view {
+        display: none;
+        animation: fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        max-width: 900px;
+        width: 100%;
+        margin: 0 auto;
+    }
+    .dashboard-view.active { display: block; }
+
+    .card {
+        background: var(--white);
+        border-radius: 16px;
+        padding: 30px;
+        box-shadow: 0 5px 20px rgba(27, 60, 70, 0.04);
+        margin-bottom: 20px;
+        border: 1px solid rgba(255,255,255,0.5);
+    }
+
+    .card h2 {
+        margin-top: 0;
+        font-size: 1.3rem;
+        border-bottom: 2px solid var(--parchment);
+        padding-bottom: 15px;
+        margin-bottom: 20px;
+        color: var(--deep-teal);
+    }
+
+    .checklist {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .check-item {
+        background: var(--parchment);
+        padding: 16px;
+        border-radius: 10px;
+        cursor: pointer;
+        display: flex;
+        align-items: flex-start;
+        transition: all 0.2s ease;
+        border: 1px solid transparent;
+    }
+
+    .check-item:hover { 
+        transform: translateX(4px); 
+        background-color: #f0e9db;
+        border-color: rgba(27, 60, 70, 0.1);
+    }
+
+    .check-box {
+        width: 22px;
+        height: 22px;
+        border: 2px solid var(--deep-teal);
+        border-radius: 6px;
+        margin-right: 18px;
+        margin-top: 3px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        transition: all 0.2s ease;
+        background: var(--white);
+    }
+
+    .check-item.checked .check-box {
+        background: var(--deep-teal);
+        border-color: var(--deep-teal);
+    }
+    
+    .check-item.checked .check-box::after {
+        content: '✓';
+        color: var(--white);
+        font-size: 14px;
+        font-weight: 800;
+    }
+
+    .check-item.checked {
+        opacity: 0.6;
+        background-color: rgba(248, 242, 229, 0.5);
+    }
+    
+    .check-item.checked .check-text {
+        text-decoration: line-through;
+        text-decoration-color: rgba(27, 60, 70, 0.3);
+    }
+
+    .check-text strong { 
+        display: block; 
+        margin-bottom: 4px; 
+        color: var(--deep-teal);
+        font-size: 1.05rem;
+    }
+    
+    .check-text span { 
+        font-size: 0.9rem; 
+        color: #55757f;
+        line-height: 1.4;
+        display: block;
+    }
+
+    .para-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 15px;
+        margin-top: 20px;
+    }
+    .para-card {
+        background: var(--pale-gray);
+        padding: 20px 15px;
+        border-radius: 8px;
+        text-align: center;
+        border-top: 4px solid var(--deep-teal);
+        transition: transform 0.2s;
+    }
+    .para-card:hover {
+        transform: translateY(-2px);
+    }
+    .para-card b { display: block; margin-bottom: 5px; color: var(--deep-teal); font-size: 1.1rem; }
+    .para-card span { font-size: 0.85rem; color: #55757f; }
+
+    .nav-arrow {
+        color: var(--deep-teal);
+        font-weight: bold;
+        font-size: 1.2rem;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 768px) {
+        body { flex-direction: column; overflow: auto; height: auto; }
+        aside { 
+            width: 100%; 
+            padding: 15px; 
+            flex-direction: row; 
+            justify-content: space-between; 
+            align-items: center; 
+            position: sticky;
+            top: 0;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .nav-menu { 
+            display: flex; 
+            flex-direction: row; 
+            gap: 10px; 
+            overflow-x: auto; 
+            padding-bottom: 0;
+            margin-left: 20px;
+        }
+        .nav-item { margin-bottom: 0; white-space: nowrap; padding: 8px 12px; }
+        .brand { margin: 0; font-size: 1.2rem; white-space: nowrap; }
+        main { padding: 20px; }
+        .nav-item span.completion-badge { display: none; }
+        .timer-widget { display: none; }
+        header { flex-direction: column; align-items: flex-start; gap: 10px; }
+    }
+</style>
+</head>
+<body>
+
+<aside>
+    <div class="brand">B·A·S·B</div>
+    <ul class="nav-menu">
+        <li class="nav-item active" onclick="switchView('overview')">
+            Overview <span class="completion-badge" id="badge-overview">0%</span>
+        </li>
+        <li class="nav-item" onclick="switchView('email')">
+            1. Email <span class="completion-badge" id="badge-email">0/1</span>
+        </li>
+        <li class="nav-item" onclick="switchView('calendar')">
+            2. Calendar <span class="completion-badge" id="badge-calendar">0/2</span>
+        </li>
+        <li class="nav-item" onclick="switchView('notes')">
+            3. Notes <span class="completion-badge" id="badge-notes">0/3</span>
+        </li>
+        <li class="nav-item" onclick="switchView('tasks')">
+            4. Tasks <span class="completion-badge" id="badge-tasks">0/4</span>
+        </li>
+    </ul>
+
+    <div class="timer-widget">
+        <div class="timer-label">Session Timer</div>
+        <div class="timer-display" id="timer-display">30:00</div>
+        <div class="timer-controls">
+            <button onclick="toggleTimer()" id="timer-btn">Start</button>
+            <button onclick="resetTimer()" class="timer-reset" title="Reset">↻</button>
+        </div>
+    </div>
+</aside>
+
+<main>
+    <header>
+        <div>
+            <h1 id="page-title">Weekly Review</h1>
+            <div class="subtitle" id="page-subtitle">Go from chaos to clarity.</div>
+        </div>
+        <div class="progress-overview">
+            <span style="font-weight:600; font-size: 0.9rem; color: var(--deep-teal);">Total Progress</span>
+            <div class="progress-bar-container">
+                <div class="main-progress-bar" id="total-progress"></div>
+            </div>
+        </div>
+    </header>
+
+    <div id="view-overview" class="dashboard-view active">
+        <div class="card">
+            <h2>Welcome to your Weekly Review</h2>
+            <p style="margin-bottom: 20px; line-height: 1.6;">This dashboard is designed to guide you through the 4-step process of clearing your head and setting up your week.</p>
+            <div style="background: var(--parchment); padding: 20px; border-radius: 8px; border-left: 4px solid var(--bright-cyan);">
+                <strong>Goal:</strong> Clear your digital workspaces, update your tasks, and decide on priorities.
+            </div>
+        </div>
+        
+        <div class="card">
+            <h2>The Process</h2>
+            <div class="checklist">
+                <div class="check-item" onclick="switchView('email')">
+                    <div class="check-box" style="border:none; background:var(--pale-gray);"><span class="nav-arrow">➜</span></div>
+                    <div class="check-text"><strong>Step 1: Email</strong> Clear inbox to zero.</div>
+                </div>
+                <div class="check-item" onclick="switchView('calendar')">
+                    <div class="check-box" style="border:none; background:var(--pale-gray);"><span class="nav-arrow">➜</span></div>
+                    <div class="check-text"><strong>Step 2: Calendar</strong> Review past/future dates.</div>
+                </div>
+                <div class="check-item" onclick="switchView('notes')">
+                    <div class="check-box" style="border:none; background:var(--pale-gray);"><span class="nav-arrow">➜</span></div>
+                    <div class="check-text"><strong>Step 3: Notes</strong> Process captured notes & desktop.</div>
+                </div>
+                <div class="check-item" onclick="switchView('tasks')">
+                    <div class="check-box" style="border:none; background:var(--pale-gray);"><span class="nav-arrow">➜</span></div>
+                    <div class="check-text"><strong>Step 4: Tasks</strong> Prioritize the week.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="view-email" class="dashboard-view">
+        <div class="card">
+            <h2>Step 1: Inbox Zero</h2>
+            <p style="margin-bottom: 15px;"><strong>Rule:</strong> Touch each email only once. Push it into one of these three buckets.</p>
+            
+            <div style="background: var(--parchment); padding: 20px; border-radius: 8px; margin-bottom: 25px; border-left: 4px solid var(--bright-cyan);">
+                <strong style="display: block; margin-bottom: 12px; color: var(--deep-teal); font-size: 1.05rem;">💡 Pro Tip: Start from the Oldest First</strong>
+                <span style="font-size: 0.9rem; color: #55757f; line-height: 1.5;">Begin with your oldest emails and work your way forward. This prevents you from falling into reactive mode and helps you stay focused on clearing systematically.</span>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 25px;">
+                <div style="background: var(--pale-gray); padding: 18px; border-radius: 10px; border-top: 3px solid var(--deep-teal);">
+                    <strong style="display: block; margin-bottom: 6px; color: var(--deep-teal);">📅 Calendar</strong>
+                    <span style="font-size: 0.85rem; color: #55757f;">Meeting invites or time-specific events.</span>
+                </div>
+                <div style="background: var(--pale-gray); padding: 18px; border-radius: 10px; border-top: 3px solid var(--deep-teal);">
+                    <strong style="display: block; margin-bottom: 6px; color: var(--deep-teal);">✅ Task Manager</strong>
+                    <span style="font-size: 0.85rem; color: #55757f;">Emails that require an action from you.</span>
+                </div>
+                <div style="background: var(--pale-gray); padding: 18px; border-radius: 10px; border-top: 3px solid var(--deep-teal);">
+                    <strong style="display: block; margin-bottom: 6px; color: var(--deep-teal);">📝 Notes App</strong>
+                    <span style="font-size: 0.85rem; color: #55757f;">Receipts, records, newsletters, or long-form reading. All go to inbox folder.</span>
+                </div>
+            </div>
+            
+            <div class="checklist">
+                <div class="check-item" onclick="toggleCheck(this, 'email')">
+                    <div class="check-box"></div>
+                    <div class="check-text"><strong>I have achieved my inbox zero</strong><span>All emails processed and inbox is empty.</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="view-calendar" class="dashboard-view">
+        <div class="card">
+            <h2>Step 2: Calendar Review</h2>
+            <p style="margin-bottom: 25px;">Scan your timeline to catch loose ends or prepare for what is coming.</p>
+            <div class="checklist">
+                <div class="check-item" onclick="toggleCheck(this, 'calendar')">
+                    <div class="check-box"></div>
+                    <div class="check-text"><strong>Review Past Week</strong><span>Look for uncompleted follow-up actions.</span></div>
+                </div>
+                <div class="check-item" onclick="toggleCheck(this, 'calendar')">
+                    <div class="check-box"></div>
+                    <div class="check-text"><strong>Scan Maximum Two Weeks Ahead</strong><span>Prepare for upcoming meetings, birthdays, or deadlines.</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="view-notes" class="dashboard-view">
+        <div class="card">
+            <h2>Step 3: Process Notes & Desktop</h2>
+            <p style="margin-bottom: 25px;">Review notes you captured throughout the week and clear desktop clutter.</p>
+            
+            <div class="para-grid">
+                <div class="para-card"><b>Projects</b><span>Active projects with deadlines</span></div>
+                <div class="para-card"><b>Areas</b><span>Ongoing responsibilities</span></div>
+                <div class="para-card"><b>Resources</b><span>Interests & Research</span></div>
+                <div class="para-card"><b>Archives</b><span>Inactive items</span></div>
+            </div>
+            <br>
+            
+            <div class="checklist">
+                <div class="check-item" onclick="toggleCheck(this, 'notes')">
+                    <div class="check-box"></div>
+                    <div class="check-text"><strong>Clear Desktop</strong><span>Delete unneeded files or move to appropriate P.A.R.A. folders.</span></div>
+                </div>
+                <div class="check-item" onclick="toggleCheck(this, 'notes')">
+                    <div class="check-box"></div>
+                    <div class="check-text"><strong>File Notes</strong><span>Move notes from "Inbox" to appropriate notebooks.</span></div>
+                </div>
+                <div class="check-item" onclick="toggleCheck(this, 'notes')">
+                    <div class="check-box"></div>
+                    <div class="check-text"><strong>Create Tasks</strong><span>If a note requires action, add it to your Task Manager.</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="view-tasks" class="dashboard-view">
+        <div class="card">
+            <h2>Step 4: Prioritize Tasks</h2>
+            <p style="margin-bottom: 25px;">Create a succinct list of priorities for <em>just this week</em>.</p>
+            <div class="checklist">
+                <div class="check-item" onclick="toggleCheck(this, 'tasks')">
+                    <div class="check-box"></div>
+                    <div class="check-text"><strong>Clarify Tasks</strong><span>Ensure every task has a Next Action and Project assigned.</span></div>
+                </div>
+                <div class="check-item" onclick="toggleCheck(this, 'tasks')">
+                    <div class="check-box"></div>
+                    <div class="check-text"><strong>Select the Priority for Each Task</strong><span>Assign high, medium, or low priority to each task.</span></div>
+                </div>
+                <div class="check-item" onclick="toggleCheck(this, 'tasks')">
+                    <div class="check-box"></div>
+                    <div class="check-text"><strong>Sort Items Based on Priority Level</strong><span>Organize your tasks by their priority levels.</span></div>
+                </div>
+                <div class="check-item" onclick="toggleCheck(this, 'tasks')">
+                    <div class="check-box"></div>
+                    <div class="check-text"><strong>Select 3 Most Important Things</strong><span>Choose the 3 most important things you will do next week.</span></div>
+                </div>
+            </div>
+        </div>
+        <div class="card" style="background: var(--parchment); text-align: center; border: 2px solid var(--deep-teal);">
+            <h3 style="margin-top:0;">Ready to go?</h3>
+            <p style="margin-bottom: 20px;">Less noise. More creativity. Have a great week!</p>
+            <button onclick="resetReview()" style="padding:12px 24px; background:var(--deep-teal); color:white; border:none; border-radius:6px; cursor:pointer; font-weight:600; font-family:inherit; transition: background 0.2s;">Reset Review</button>
+        </div>
+    </div>
+
+</main>
+
+<!-- Celebration Modal -->
+<div class="celebration-overlay" id="celebration-modal">
+    <div class="celebration-content">
+        <span class="celebration-emoji">🎉</span>
+        <h2>Congratulations!</h2>
+        <p>You've completed your Weekly Review!<br>You're ready to have a productive and focused week ahead.</p>
+        <button class="celebration-button" onclick="closeCelebration()">Let's Go!</button>
+        
+        <div style="margin-top: 30px; padding-top: 25px; border-top: 1px solid var(--pale-gray);">
+            <p style="font-size: 0.95rem; margin-bottom: 15px; color: var(--deep-teal);">Want to level up your productivity?</p>
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+                <a href="https://shop.fortelabs.com/products/pillars-of-productivity/" target="_blank" style="display: inline-block; padding: 10px 20px; background: var(--bright-cyan); color: var(--deep-teal); text-decoration: none; border-radius: 6px; font-weight: 600; transition: all 0.2s; font-size: 0.9rem;">Explore Pillars of Productivity Course</a>
+                <a href="https://fortelabs.com/" target="_blank" style="display: inline-block; padding: 10px 20px; background: transparent; color: var(--deep-teal); text-decoration: none; border: 2px solid var(--deep-teal); border-radius: 6px; font-weight: 600; transition: all 0.2s; font-size: 0.9rem;">Visit Forte Labs</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const defaultProgress = {
+        email: { current: 0, total: 1 },
+        calendar: { current: 0, total: 2 },
+        notes: { current: 0, total: 3 },
+        tasks: { current: 0, total: 4 }
+    };
+    
+    let progressData = JSON.parse(JSON.stringify(defaultProgress));
+
+    function switchView(viewName) {
+        document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+        
+        const navIndex = {
+            'overview': 0,
+            'email': 1,
+            'calendar': 2,
+            'notes': 3,
+            'tasks': 4
+        };
+        
+        const items = document.querySelectorAll('.nav-item');
+        if (items[navIndex[viewName]]) {
+            items[navIndex[viewName]].classList.add('active');
+        }
+
+        document.querySelectorAll('.dashboard-view').forEach(el => el.classList.remove('active'));
+        document.getElementById(`view-${viewName}`).classList.add('active');
+
+        const titles = {
+            overview: "Overview",
+            email: "Step 1: Email",
+            calendar: "Step 2: Calendar",
+            notes: "Step 3: Notes",
+            tasks: "Step 4: Tasks"
+        };
+        document.getElementById('page-title').innerText = titles[viewName];
+        
+        document.querySelector('main').scrollTop = 0;
+    }
+
+    function toggleCheck(element, category) {
+        element.classList.toggle('checked');
+        const isChecked = element.classList.contains('checked');
+        
+        if (isChecked) {
+            progressData[category].current++;
+        } else {
+            progressData[category].current--;
+        }
+
+        if(progressData[category].current < 0) progressData[category].current = 0;
+        if(progressData[category].current > progressData[category].total) progressData[category].current = progressData[category].total;
+
+        updateBadges();
+    }
+
+    function updateBadges() {
+        let totalChecks = 0;
+        let totalPossible = 0;
+
+        for (const [key, value] of Object.entries(progressData)) {
+            const badge = document.getElementById(`badge-${key}`);
+            if (badge) badge.innerText = `${value.current}/${value.total}`;
+            
+            totalChecks += value.current;
+            totalPossible += value.total;
+        }
+
+        const percentage = Math.round((totalChecks / totalPossible) * 100);
+        
+        document.getElementById('total-progress').style.width = `${percentage}%`;
+        
+        document.getElementById('badge-overview').innerText = `${percentage}%`;
+        
+        // Trigger celebration at 100%
+        if (percentage === 100) {
+            triggerCelebration();
+        }
+    }
+    
+    function resetReview() {
+        document.querySelectorAll('.check-item.checked').forEach(el => el.classList.remove('checked'));
+        
+        progressData = JSON.parse(JSON.stringify(defaultProgress));
+        updateBadges();
+        
+        switchView('overview');
+    }
+
+    let timerInterval;
+    let timeLeft = 30 * 60;
+    let isTimerRunning = false;
+
+    function formatTime(seconds) {
+        const m = Math.floor(seconds / 60);
+        const s = seconds % 60;
+        return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+    }
+
+    function updateTimerDisplay() {
+        document.getElementById('timer-display').innerText = formatTime(timeLeft);
+    }
+
+    function toggleTimer() {
+        const btn = document.getElementById('timer-btn');
+        
+        if (isTimerRunning) {
+            clearInterval(timerInterval);
+            isTimerRunning = false;
+            btn.innerText = "Resume";
+            btn.classList.remove('active');
+        } else {
+            if (timeLeft <= 0) timeLeft = 30 * 60;
+            
+            isTimerRunning = true;
+            btn.innerText = "Pause";
+            btn.classList.add('active');
+            
+            timerInterval = setInterval(() => {
+                if (timeLeft > 0) {
+                    timeLeft--;
+                    updateTimerDisplay();
+                } else {
+                    clearInterval(timerInterval);
+                    isTimerRunning = false;
+                    btn.innerText = "Start";
+                    btn.classList.remove('active');
+                    document.getElementById('timer-display').style.color = '#ff6b6b';
+                }
+            }, 1000);
+        }
+    }
+
+    function resetTimer() {
+        clearInterval(timerInterval);
+        isTimerRunning = false;
+        timeLeft = 30 * 60;
+        updateTimerDisplay();
+        const btn = document.getElementById('timer-btn');
+        btn.innerText = "Start";
+        btn.classList.remove('active');
+        document.getElementById('timer-display').style.color = 'var(--bright-cyan)';
+    }
+
+    // Celebration Functions
+    function createConfetti() {
+        const colors = ['#46e1bd', '#ffd700', '#ff6b6b', '#4ecdc4', '#95e1d3'];
+        const confettiCount = 50;
+        
+        for (let i = 0; i < confettiCount; i++) {
+            const confetti = document.createElement('div');
+            confetti.className = 'confetti';
+            confetti.style.left = Math.random() * 100 + '%';
+            confetti.style.top = '-10px';
+            confetti.style.background = colors[Math.floor(Math.random() * colors.length)];
+            confetti.style.animationDelay = Math.random() * 0.5 + 's';
+            confetti.style.animationDuration = (Math.random() * 2 + 2) + 's';
+            
+            document.body.appendChild(confetti);
+            
+            setTimeout(() => confetti.remove(), 3500);
+        }
+    }
+
+    function triggerCelebration() {
+        // Small delay to let the last checkbox animation complete
+        setTimeout(() => {
+            createConfetti();
+            document.getElementById('celebration-modal').classList.add('active');
+        }, 300);
+    }
+
+    function closeCelebration() {
+        document.getElementById('celebration-modal').classList.remove('active');
+    }
+</script>
+
+</body>
+</html>
